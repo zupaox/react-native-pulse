@@ -31,6 +31,7 @@ export default class Pulse extends Component {
         initialDiameter: PropTypes.number,
         numPulses: PropTypes.number,
         pulseStyle: PropTypes.object,
+        incrementalDiameterPerDraw: PropTypes.number,
         speed: PropTypes.number,
         style: PropTypes.object
     };
@@ -44,6 +45,7 @@ export default class Pulse extends Component {
         numPulses: 3,
         pulseStyle: {},
         speed: 10,
+        incrementalDiameterPerDraw: 2,
         style: {
             top: 0,
             bottom: 0,
@@ -55,40 +57,57 @@ export default class Pulse extends Component {
 
     constructor(props){
         super(props);
-
-        this.state = {
-            color: this.props.color,
-            duration: this.props.duration,
-            image: this.props.image,
-            maxDiameter: this.props.diameter,
-            numPulses: this.props.numPulses,
-            pulses: [],
-            pulseStyle: this.props.pulseStyle,
-            speed: this.props.speed,
-            started: false,
-            style: this.props.style
-        };
+        this.reset();
     }
 
     mounted = true;
 
     componentDidMount(){
-        const {numPulses, duration, speed} = this.state;
+      this.start();
+    }
 
-        this.setState({started: true});
+    componentDidUpdate(prevProps) {
+      if(prevProps.diameter !== this.props.diameter) {
+        this.reset();
+      }
+    }
 
-        let a = 0;
-        while(a < numPulses){
-            this.createPulseTimer = setTimeout(()=>{
-                this.createPulse(a);
-            }, a * duration);
+    start() {
+      const {numPulses, duration, speed} = this.state;
 
-            a++;
-        }
+      this.setState({started: true});
 
-        this.timer = setInterval(() => {
-            this.updatePulse();
-        }, speed);
+      let a = 0;
+      while(a < numPulses){
+          this.createPulseTimer = setTimeout(()=>{
+              this.createPulse(a);
+          }, a * duration);
+
+          a++;
+      }
+
+      this.timer = setInterval(() => {
+          this.updatePulse();
+      }, speed);
+    }
+
+    reset() {
+      clearTimeout(this.createPulseTimer);
+      clearInterval(this.timer);
+      this.state = {
+        color: this.props.color,
+        duration: this.props.duration,
+        image: this.props.image,
+        maxDiameter: this.props.diameter,
+        numPulses: this.props.numPulses,
+        pulses: [],
+        pulseStyle: this.props.pulseStyle,
+        speed: this.props.speed,
+        started: false,
+        style: this.props.style,
+        incrementalDiameterPerDraw: this.props.incrementalDiameterPerDraw
+      };
+      this.start();
     }
 
     componentWillUnmount(){
@@ -118,7 +137,7 @@ export default class Pulse extends Component {
         if (this.mounted) {
             const pulses = this.state.pulses.map((p, i) => {
                 let maxDiameter = this.state.maxDiameter;
-                let newDiameter = (p.diameter > maxDiameter ? 0 : p.diameter + 2);
+                let newDiameter = (p.diameter > maxDiameter ? 0 : p.diameter + this.state.incrementalDiameterPerDraw);
                 let centerOffset = ( maxDiameter - newDiameter ) / 2;
                 let opacity = Math.abs( ( newDiameter / this.state.maxDiameter ) - 1 );
 
